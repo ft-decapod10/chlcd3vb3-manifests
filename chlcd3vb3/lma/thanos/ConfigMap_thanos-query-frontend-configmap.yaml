@@ -1,0 +1,18 @@
+# Source: thanos/templates/query-frontend/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thanos-query-frontend-configmap
+  labels:
+    app.kubernetes.io/name: thanos
+    helm.sh/chart: thanos-3.4.0
+    app.kubernetes.io/instance: thanos
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: query-frontend
+data:
+  config.yml: |-
+    type: IN-MEMORY
+    config:
+      max_size: 512MB
+      max_size_items: 100
+      validity: 100s

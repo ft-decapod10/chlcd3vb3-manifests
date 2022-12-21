@@ -1,0 +1,20 @@
+# Source: lma-addons/templates/service-monitor/calico-exporter-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: "true"
+  labels:
+    k8s-app: calico-node
+  name: calico-exporter
+  namespace: kube-system
+spec:
+  ports:
+  - name: metrics
+    port: 9091
+    protocol: TCP
+    targetPort: 9091
+  selector:
+    k8s-app: calico-node
+  sessionAffinity: None
+  type: ClusterIP

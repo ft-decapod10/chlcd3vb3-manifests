@@ -1,0 +1,60 @@
+# Source: cluster-autoscaler/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-autoscaler
+  namespace: kube-system
+  labels:
+    helm.sh/chart: cluster-autoscaler-0.2.0
+    app.kubernetes.io/name: cluster-autoscaler
+    app.kubernetes.io/instance: cluster-autoscaler
+    app.kubernetes.io/version: "1.22.2"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cluster-autoscaler
+      app.kubernetes.io/instance: cluster-autoscaler
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cluster-autoscaler
+        app.kubernetes.io/instance: cluster-autoscaler
+    spec:
+      serviceAccountName: cluster-autoscaler
+      securityContext:
+        {}
+      containers:
+        - name: cluster-autoscaler
+          securityContext:
+            {}
+          image: "k8s.gcr.io/autoscaling/cluster-autoscaler:v1.22.2"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+          livenessProbe:
+            httpGet:
+              path: /health-check
+              port: 8085
+          resources:
+            {}
+          command:
+          - /cluster-autoscaler
+          args:
+          - --cloud-provider=clusterapi
+          - --cloud-config=/etc/mgmt_cluster/kubeconfig
+          - --node-group-auto-discovery=clusterapi:namespace=chlcd3vb3,clusterName=chlcd3vb3
+          volumeMounts:
+          - name: mgmt-kubeconfig
+            mountPath: "/etc/mgmt_cluster"
+            readOnly: true
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: mgmt-kubeconfig
+        secret:
+          secretName: "mgmt-kubeconfig"
+

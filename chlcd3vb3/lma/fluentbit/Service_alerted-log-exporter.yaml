@@ -1,0 +1,18 @@
+---
+# Source: fluentbit-resource/templates/exporter/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: alerted-log-exporter
+  labels:
+    app: fluentbit-resource-exporter
+  annotations:
+    prometheus.io/scrape: 'true'
+spec:
+  selector:
+    app: fluentbit-resource-exporter
+  ports:
+    - name: service
+      protocol: TCP
+      port: 2112
+      targetPort: 2112

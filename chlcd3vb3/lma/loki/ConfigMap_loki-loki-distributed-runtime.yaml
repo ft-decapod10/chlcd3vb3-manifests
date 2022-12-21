@@ -1,0 +1,15 @@
+# Source: loki-distributed/templates/runtime-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-loki-distributed-runtime
+  labels:
+    helm.sh/chart: loki-distributed-0.58.0
+    app.kubernetes.io/name: loki-distributed
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/version: "2.6.1"
+    app.kubernetes.io/managed-by: Helm
+data:
+  runtime.yaml: |
+    
+    {}

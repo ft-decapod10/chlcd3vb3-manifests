@@ -1,0 +1,17 @@
+# Source: eventrouter/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eventrouter
+  labels:     
+    app: eventrouter
+    heritage: Helm
+    release: eventrouter
+    chart: eventrouter-0.4.0
+  namespace: lma
+data:
+  config.json: |-
+    {
+      "sink": "glog",
+      "enable-prometheus": "true"
+    }

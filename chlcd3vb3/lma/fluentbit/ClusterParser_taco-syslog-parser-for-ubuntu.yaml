@@ -1,0 +1,16 @@
+# Source: fluentbit-resource/templates/fluentbit/parsers.yaml
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterParser
+metadata:
+  name: taco-syslog-parser-for-ubuntu
+  namespace: lma
+  labels:
+    fluentbit.fluent.io/enabled: "true"
+    app.kubernetes.io/version: v0.0.1
+spec:
+  regex:
+    regex: ^(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)?
+      *(?<message>.*)$
+    timeFormat: '%b %d %H:%M:%S'
+    timeKeep: false
+    timeKey: time

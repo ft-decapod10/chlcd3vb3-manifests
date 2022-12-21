@@ -1,0 +1,258 @@
+# Source: cluster-api-aws/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chlcd3vb3-capi-aws
+  namespace: chlcd3vb3
+data:
+  generate_worker_machines.py: |
+    #!/usr/local/bin/python3
+    import sys, yaml, os, time
+    
+    def get_subnets(stream):
+      subnets=[]
+      try:
+        parsed = yaml.safe_load(stream)
+        if (parsed['apiVersion'] == 'infrastructure.cluster.x-k8s.io/v1alpha3'):
+          for entry in parsed['spec']['networkSpec']['subnets']:
+            if not entry['isPublic']:
+              subnets.append(entry['id'])
+        else:
+          for entry in parsed['spec']['network']['subnets']:
+            if not entry['isPublic']:
+              subnets.append(entry['id'])
+    
+      except yaml.YAMLError as exc:
+        print(exc)
+      except TypeError as exc:
+        print(exc)
+    
+      return subnets
+    
+    def apply_resources(machine_resources, name):
+      if machine_resources is not None:
+        yaml_filename = name + ".yaml"
+        f = open(yaml_filename, 'a')
+        for machine in machine_resources:
+          for resource in machine_resources[machine]:
+            f.write('---\n')
+            f.write(yaml.dump(machine_resources[machine][resource]))
+    
+        f.close()
+        os.system('kubectl apply -n {0} -f {1}'.format(sys.argv[2], yaml_filename))
+    
+    def gen_machinepool_resources(subnets):
+      subnetd=[]
+      for subnet in subnets:
+        subnetd.append({'id': subnet})
+    
+      try:
+        machinepools = yaml.safe_load(open('mp.raw.yaml', 'r'))
+    
+        for resource in machinepools:
+          machinepools[resource]['AMP']['spec']['subnets']=subnetd
+    
+      except yaml.YAMLError as exc:
+        print(exc)
+      except TypeError as exc:
+        print(exc)
+    
+      apply_resources(machinepools, "mps")
+    
+    def gen_machinedeployment_resource(subnets):
+      subnetd=[]
+      for subnet in subnets:
+        subnetd.append({'id': subnet})
+      try:
+        machinedeployments = yaml.safe_load(open('md.raw.yaml', 'r'))
+    
+        for resource in machinedeployments:
+          # resource => "MD_NAME-[0-(NUMBER_OF_AZ - 1)]"
+          az_index = int(resource[-1])
+          machinedeployments[resource]['AWSMachineTemplate']['spec']['template']['spec']['subnet']=subnetd[az_index]
+      except yaml.YAMLError as exc:
+        print(exc)
+      except TypeError as exc:
+        print(exc)
+    
+      apply_resources(machinedeployments, "mds")
+    
+    def main(argv):
+      stream = os.popen('kubectl get awscluster -n {1} {0} -o yaml'.format(sys.argv[1],sys.argv[2]))
+      subnets = get_subnets(stream)
+    
+      gen_machinepool_resources(subnets)
+      gen_machinedeployment_resource(subnets)
+    
+    if __name__ == "__main__":
+      main(sys.argv[1:])
+    
+
+  mp.raw.yaml: |
+    
+    taco:
+      MP:
+        apiVersion: cluster.x-k8s.io/v1beta1
+        kind: MachinePool
+        metadata:
+          name: chlcd3vb3-taco-mp-0
+          namespace: chlcd3vb3
+        spec:
+          clusterName: chlcd3vb3
+          replicas: 3
+          template:
+            metadata:
+              labels:
+                servicemesh: enabled
+                taco-ingress-gateway: enabled
+                taco-lma: enabled
+            spec:
+              bootstrap:
+                configRef:
+                  apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+                  kind: KubeadmConfig
+                  name: chlcd3vb3-taco-mp-0
+                  namespace: chlcd3vb3
+              clusterName: chlcd3vb3
+              infrastructureRef:
+                apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+                kind: AWSMachinePool
+                name: chlcd3vb3-taco-mp-0
+                namespace: chlcd3vb3
+              version: v1.22.5
+      AMP:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: AWSMachinePool
+        metadata:
+          name: chlcd3vb3-taco-mp-0
+          namespace: chlcd3vb3
+        spec:
+          availabilityZones:
+          - ap-northeast-2
+          awsLaunchTemplate:
+            instanceType: t3.2xlarge
+            sshKeyName: tks-seoul
+            iamInstanceProfile: "nodes.cluster-api-provider-aws.sigs.k8s.io"
+            rootVolume:
+              size: 200
+              type: gp2
+          maxSize: 16
+          minSize: 1
+      KAC:
+        apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+        kind: KubeadmConfig
+        metadata:
+          name: chlcd3vb3-taco-mp-0
+          namespace: chlcd3vb3
+        spec:
+          joinConfiguration:
+            nodeRegistration:
+              kubeletExtraArgs:
+                cloud-provider: aws
+              name: '{{ ds.meta_data.local_hostname }}'
+    
+
+  md.raw.yaml: |
+    
+    normal-0:
+      MachineDeployment:
+        apiVersion: cluster.x-k8s.io/v1beta1
+        kind: MachineDeployment
+        metadata:
+          name: chlcd3vb3-md-normal-0
+          namespace: chlcd3vb3
+          annotations:
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "2"
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "10"
+        spec:
+          clusterName: chlcd3vb3
+          replicas: 2
+          template:
+            spec:
+              bootstrap:
+                configRef:
+                  apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+                  kind: KubeadmConfigTemplate
+                  name: chlcd3vb3-md-normal-0
+              clusterName: chlcd3vb3
+              infrastructureRef:
+                apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+                kind: AWSMachineTemplate
+                name: chlcd3vb3-md-normal-0
+              version: v1.22.5
+          selector:
+            matchLabels: null
+      AWSMachineTemplate:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: AWSMachineTemplate
+        metadata:
+          name: chlcd3vb3-md-normal-0
+          namespace: chlcd3vb3
+        spec:
+          template:
+            spec:
+              iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
+              instanceType: t3.large
+              sshKeyName: tks-seoul
+              rootVolume:
+                size: 50
+                type: gp2
+      KubeadmConfigTemplate:
+        apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+        kind: KubeadmConfigTemplate
+        metadata:
+          name: chlcd3vb3-md-normal-0
+          namespace: chlcd3vb3
+        spec:
+          template:
+            spec:
+              joinConfiguration:
+                nodeRegistration:
+                  kubeletExtraArgs:
+                    cloud-provider: aws
+                  name: '{{ ds.meta_data.local_hostname }}'
+    
+
+  wait_for_kubeconfig.sh: |
+    #!/bin/bash
+    set -ex
+    
+    while  [ $(kubectl get secret -n $2 $1-kubeconfig --ignore-not-found | wc -l) == 0 ]; do
+      echo "sleep 1 second"
+      sleep 1
+    done
+    
+
+  delete_from_yaml_raw.py: |
+    #!/usr/local/bin/python3
+    import sys, yaml, os, time
+    
+    def main(argv):
+      try:
+        parsed = yaml.safe_load(open(sys.argv[1], 'r'))
+        for group in parsed:
+          for resource in parsed[group]:
+            os.system('kubectl delete {0} -n {1} {2}'.format(
+              parsed[group][resource]['kind'],
+              parsed[group][resource]['metadata']['namespace'],
+              parsed[group][resource]['metadata']['name']
+            ))
+        for group in parsed:
+          for resource in parsed[group]:
+            os.system('''C=0;
+              while [ $(kubectl get {0} -n {1} {2} --ignore-not-found | grep {2} | wc -l) -eq 1 ]; 
+              do 
+                echo wait for disappearance of {2} _$C; 
+                C=$(($C+1));
+                sleep 2; 
+              done'''.format(
+              parsed[group][resource]['kind'],
+              parsed[group][resource]['metadata']['namespace'],
+              parsed[group][resource]['metadata']['name']
+            ))
+      except yaml.YAMLError as exc:
+        print(exc)
+      except TypeError as exc:
+        print(exc)
+    if __name__ == "__main__":
+      main(sys.argv[1:])

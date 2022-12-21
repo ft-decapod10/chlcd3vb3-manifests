@@ -1,0 +1,123 @@
+---
+# Source: eck-resource/templates/elasticsearch.yaml
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: eck-elasticsearch
+spec:
+  http:
+    service:
+      spec:
+        ports:
+        - name: https
+          nodePort: 30011
+          port: 9200
+          targetPort: 9200
+        type: NodePort
+  version: 7.5.1
+  image: docker.elastic.co/elasticsearch/elasticsearch:7.5.1
+  podDisruptionBudget: {}
+  nodeSets:
+  - name: client
+    count: 1
+    config:
+      node.data: false
+      node.ingest: false
+      node.master: false
+      node.store.allow_mmap: false
+    podTemplate:
+      spec:
+        initContainers:
+        - name: sysctl
+          securityContext:
+            privileged: true
+          command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
+        containers:
+        - name: elasticsearch
+          resources:
+            limits:
+              memory: "4Gi"
+              cpu: 2   
+          env:
+          - name: ES_JAVA_OPTS
+            value: "-Xms2g -Xmx2g"
+        nodeSelector:
+          taco-lma: enabled
+    volumeClaimTemplates:
+      - metadata:
+          name: elasticsearch-data
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 0.5Gi
+          storageClassName: taco-storage
+  - name: hotdata
+    count: 3
+    config:
+      node.attr.hotwarm: hot
+      node.data: true
+      node.ingest: true
+      node.master: false
+      node.store.allow_mmap: false
+    podTemplate:
+      spec:
+        initContainers:
+        - name: sysctl
+          securityContext:
+            privileged: true
+          command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
+        containers:
+        - name: elasticsearch
+          resources:
+            limits:
+              memory: "4Gi"
+              cpu: 1   
+          env:
+          - name: ES_JAVA_OPTS
+            value: "-Xms2g -Xmx2g"
+        nodeSelector:
+          taco-lma: enabled
+    volumeClaimTemplates:
+      - metadata:
+          name: elasticsearch-data
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: taco-storage
+  - name: master
+    count: 3
+    config:
+      node.data: false
+      node.ingest: false
+      node.master: true
+      node.store.allow_mmap: false
+    podTemplate:
+      spec:
+        initContainers:
+        - name: sysctl
+          securityContext:
+            privileged: true
+          command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
+        containers:
+        - name: elasticsearch
+          resources:
+            limits:
+              memory: "4Gi"
+              cpu: 1   
+          env:
+          - name: ES_JAVA_OPTS
+            value: "-Xms2g -Xmx2g"
+        nodeSelector:
+          taco-lma: enabled
+    volumeClaimTemplates:
+      - metadata:
+          name: elasticsearch-data
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 2Gi
+          storageClassName: taco-storage

@@ -1,0 +1,128 @@
+# Source: thanos/templates/ruler/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-ruler
+  labels:
+    app.kubernetes.io/name: thanos
+    helm.sh/chart: thanos-3.4.0
+    app.kubernetes.io/instance: thanos
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: ruler
+spec:
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  serviceName: thanos-ruler-headless
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos
+      app.kubernetes.io/instance: thanos
+      app.kubernetes.io/component: ruler
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos
+        helm.sh/chart: thanos-3.4.0
+        app.kubernetes.io/instance: thanos
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: ruler
+      annotations:
+        checksum/ojbstore-configuration: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/ruler-configuration: 50b03b1d76bcb40b1d9e71f788fa40b0924f101737b459feacabdc6a3d51f8a3
+    spec:
+      
+      serviceAccount: thanos-ruler
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: thanos
+                    app.kubernetes.io/instance: thanos
+                    app.kubernetes.io/component: ruler
+                namespaces:
+                  - "lma"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      nodeSelector:
+        taco-lma: enabled
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: ruler
+          image: docker.io/bitnami/thanos:0.17.2-scratch-r1
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            runAsUser: 1001
+          args:
+            - rule
+            - --log.level=info
+            - --grpc-address=0.0.0.0:10901
+            - --http-address=0.0.0.0:10902
+            - --data-dir=/data
+            - --eval-interval=1m
+            - --alertmanagers.url=http://fed-master-alertmanager.lma.svc.cluster.local:9093
+            - --query=dnssrv+_http._tcp.thanos-query.lma.svc.cluster.local
+            - --label=replica="$(POD_NAME)"
+            - --label=ruler_cluster=""
+            - --alert.label-drop=replica
+            - --objstore.config-file=/conf/objstore/objstore.yml
+            - --rule-file=/conf/rules/ruler.yml
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - name: http
+              containerPort: 10902
+              protocol: TCP
+            - name: grpc
+              containerPort: 10901
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+            - name: ruler-config
+              mountPath: /conf/rules
+            - name: objstore-config
+              mountPath: /conf/objstore
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: ruler-config
+          configMap:
+            name: thanos-ruler-configmap
+        - name: objstore-config
+          secret:
+            secretName: taco-objstore-secret
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "8Gi"
+        storageClassName: taco-storage

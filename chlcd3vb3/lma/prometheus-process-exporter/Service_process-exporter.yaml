@@ -1,0 +1,23 @@
+# Source: prometheus-process-exporter/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: process-exporter
+  labels:
+    release_group: prometheus-process-exporter
+    application: process_exporter
+    component: metrics
+  annotations:
+    
+    prometheus.io/scrape: "true"
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: metrics
+    port: 9256
+    targetPort: 9256
+  selector:
+    release_group: prometheus-process-exporter
+    application: process_exporter
+    component: metrics

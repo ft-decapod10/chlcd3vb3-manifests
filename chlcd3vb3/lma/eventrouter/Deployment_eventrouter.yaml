@@ -1,0 +1,46 @@
+# Source: eventrouter/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:     
+    app: eventrouter
+    heritage: Helm
+    release: eventrouter
+    chart: eventrouter-0.4.0
+  name: eventrouter
+  namespace: lma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eventrouter
+      release: eventrouter
+  template:
+    metadata:
+      labels:
+        app: eventrouter
+        release: eventrouter
+      annotations:
+        checksum/config: ebf4d4a4ef21eba4c3dad9f43ced0435d1fe45d5c30430f61ae15b9aa0a4503c
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+    spec:
+      containers:
+      - name: eventrouter
+        image: "sktdev/os-eventrouter:69a58b"
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: tmp
+            mountPath: /tmp
+          - name: config-volume
+            mountPath: /etc/eventrouter
+        resources:
+          {}
+      serviceAccountName: eventrouter
+      volumes:
+        - name: config-volume
+          configMap:
+            name: eventrouter
+        - name: tmp
+          emptyDir: {}
+

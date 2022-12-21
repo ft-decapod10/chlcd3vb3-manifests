@@ -1,0 +1,35 @@
+# Source: eck-resource/templates/kibana.yaml
+apiVersion: kibana.k8s.elastic.co/v1beta1
+kind: Kibana
+metadata:
+  name: eck-kibana
+spec:
+  version: 7.5.1
+  image: "docker.elastic.co/kibana/kibana:7.5.1"
+  count: 1
+  elasticsearchRef:
+    name: eck-elasticsearch
+  http:
+    service:
+      spec:
+        ports:
+        - name: http
+          nodePort: 30001
+          port: 5601
+          targetPort: 5601
+        type: NodePort
+    tls:
+      selfSignedCertificate:
+        disabled: true
+  podTemplate:
+    metadata:
+      creationTimestamp: null
+    spec:
+      containers:
+      - name: kibana
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: 1
+      nodeSelector:
+        taco-lma: enabled

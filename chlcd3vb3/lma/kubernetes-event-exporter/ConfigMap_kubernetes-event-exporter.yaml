@@ -1,0 +1,53 @@
+# Source: kubernetes-event-exporter/templates/configmap-configs.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubernetes-event-exporter
+  labels:
+    helm.sh/chart: kubernetes-event-exporter-2.0.0
+    app.kubernetes.io/name: event-exporter
+    app.kubernetes.io/instance: kubernetes-event-exporter
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  config.yaml: |
+    logLevel: error
+    logFormat: json
+    route:
+      routes:
+      - match:
+        - receiver: loki
+    receivers:
+    - name:  loki
+      file:
+        path: /tmp/kubernetes-event.log
+  fluent-bit.conf: |
+    [Service]
+      Log_Level    info
+      Parsers_File    parsers.conf
+    [Input]
+      Name    tail
+      Buffer_Chunk_Size    2M
+      Buffer_Max_Size    5M
+      Path   /tmp/kubernetes-event.log
+      DB    /fluent-bit/tail
+      Mem_Buf_Limit    20MB
+      Parser    json
+      Tag    event.*
+    [Filter]
+      Name    modify
+      Match   event.*
+      Add    cluster   taco-cluster.local
+    [Output]
+      Name    loki
+      Match    event.*
+      host    loki
+      port    3100
+      Labels job=event, $cluster, $metadata['name'], $metadata['namespace'], $type, $reason
+      auto_kubernetes_labels on
+  parsers.conf: |
+    [PARSER]
+      Name   json
+      Format json
+      Time_Key time
+      Time_Format %d/%b/%Y:%H:%M:%S %z

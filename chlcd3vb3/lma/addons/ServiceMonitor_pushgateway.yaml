@@ -1,0 +1,16 @@
+# Source: lma-addons/templates/service-monitor/pushgateway.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: pushgateway
+  labels:
+    app: pushgateway
+spec:
+  jobLabel: pushgateway
+  selector:
+    matchLabels:
+      app: prometheus-pushgateway
+  endpoints:
+  - port: http
+    honorLabels: true
+

@@ -1,0 +1,19 @@
+# Source: lma-addons/templates/service-monitor/argo-workflow.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: argo-workflows-controller
+  namespace: lma
+  labels:
+    release: prometheus-operator
+spec:
+  jobLabel: argo-workflows-controller
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argo-workflows-workflow-controller
+  endpoints:
+  - port: metrics
+    interval: 10s
+    path: "/metrics"

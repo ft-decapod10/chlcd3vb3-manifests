@@ -1,0 +1,19 @@
+# Source: fluentbit-resource/templates/exporter/servicemonitor.yaml
+apiVersion: "monitoring.coreos.com/v1"
+kind: ServiceMonitor
+metadata:
+  name: alerted-log-exporter
+  labels:
+    app: fluentbit-resource-exporter
+spec:
+  namespaceSelector:
+    matchNames:
+    - lma
+  selector:
+    matchLabels:
+      app: fluentbit-resource-exporter
+  endpoints:
+  - port: service
+    interval: 1m
+    path: /metrics
+

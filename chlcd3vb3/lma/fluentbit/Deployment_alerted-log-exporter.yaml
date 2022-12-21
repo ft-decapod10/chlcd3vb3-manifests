@@ -1,0 +1,27 @@
+# Source: fluentbit-resource/templates/exporter/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alerted-log-exporter
+  labels:
+    app: fluentbit-resource-exporter
+  annotations:
+    prometheus.io/scrape: 'true'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fluentbit-resource-exporter
+  template:
+    metadata:
+      labels:
+        app: fluentbit-resource-exporter
+    spec:
+      nodeSelector:
+        taco-lma: enabled
+      containers:
+      - name: exporter
+        image: siim/logalert-exporter:v0.1.1
+        imagePullPolicy: "IfNotPresent"
+        ports:
+        - containerPort: 2112

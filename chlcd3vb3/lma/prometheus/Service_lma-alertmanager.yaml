@@ -1,0 +1,28 @@
+# Source: kube-prometheus-stack/templates/alertmanager/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: lma-alertmanager
+  namespace: lma
+  labels:
+    app: kube-prometheus-stack-alertmanager
+    self-monitor: "true"
+    
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: prometheus
+    app.kubernetes.io/version: "21.0.3"
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    chart: kube-prometheus-stack-21.0.3
+    release: "prometheus"
+    heritage: "Helm"
+spec:
+  ports:
+  - name: web
+    nodePort: 30111
+    port: 9093
+    targetPort: 9093
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: alertmanager
+    alertmanager: lma-alertmanager
+  type: "NodePort"

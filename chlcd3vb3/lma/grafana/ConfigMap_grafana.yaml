@@ -1,0 +1,29 @@
+# Source: grafana/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana
+  namespace: lma
+  labels:
+    helm.sh/chart: grafana-6.19.4
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/version: "8.3.3"
+    app.kubernetes.io/managed-by: Helm
+data:
+  plugins: vonage-status-panel,grafana-piechart-panel
+  grafana.ini: |
+    [analytics]
+    check_for_updates = true
+    [grafana_net]
+    url = https://grafana.net
+    [log]
+    mode = console
+    [paths]
+    data = /var/lib/grafana/
+    logs = /var/log/grafana
+    plugins = /var/lib/grafana/plugins
+    provisioning = /etc/grafana/provisioning
+    [plugins]
+    grafana-piechart-panel = true
+    vonage-status-panel = true

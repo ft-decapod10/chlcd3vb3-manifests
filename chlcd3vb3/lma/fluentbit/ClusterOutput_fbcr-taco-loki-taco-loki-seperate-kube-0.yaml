@@ -1,0 +1,21 @@
+# Source: fluentbit-resource/templates/fluentbit/outputs.yaml
+# Loki taco-loki
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterOutput
+metadata:
+  name: fbcr-taco-loki-taco-loki-seperate-kube-0
+  namespace: lma
+  labels:
+    fluentbit.fluent.io/enabled: "true"
+    app.kubernetes.io/version: v0.0.1
+spec:
+  match: "seperate-kube-0.*"
+  loki:
+    autoKubernetesLabels: "on"
+    host: loki
+    port: 3100
+    labels:
+    - job=platform
+    - $kubernetes['pod_name']
+    - $kubernetes['namespace_name']
+    - $kubernetes['container_name']

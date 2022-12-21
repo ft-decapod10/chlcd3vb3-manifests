@@ -1,0 +1,15 @@
+# Source: lma-addons/templates/service-monitor/grafana.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  selector:
+    matchLabels:
+      app: grafana
+  endpoints:
+  - port: service
+    interval: 10s
+    path: "/metrics"

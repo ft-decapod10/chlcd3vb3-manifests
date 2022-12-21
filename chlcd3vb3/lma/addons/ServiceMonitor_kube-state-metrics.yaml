@@ -1,0 +1,20 @@
+# Source: lma-addons/templates/service-monitor/kube-state-metrics.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kube-state-metrics
+  namespace: lma
+  labels:
+    app: kube-state-metrics
+spec:
+  jobLabel: app.kubernetes.io/name
+  endpoints:
+  - port: http
+    interval: 10s
+    honorLabels: true
+  namespaceSelector:
+    matchNames:
+    - lma
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-state-metrics

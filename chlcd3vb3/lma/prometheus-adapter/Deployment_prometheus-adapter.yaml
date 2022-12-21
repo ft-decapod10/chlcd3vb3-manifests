@@ -1,0 +1,83 @@
+# Source: prometheus-adapter/templates/custom-metrics-apiserver-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: prometheus-adapter
+    chart: prometheus-adapter-2.5.1
+    release: prometheus-adapter
+    heritage: Helm
+  name: prometheus-adapter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-adapter
+      release: prometheus-adapter
+  template:
+    metadata:
+      labels:
+        app: prometheus-adapter
+        chart: prometheus-adapter-2.5.1
+        release: prometheus-adapter
+        heritage: Helm
+      name: prometheus-adapter
+      annotations:
+        checksum/config: adee09cedfe50a2b897e4d8dff66f2f8a6cd9590b5d4ae70f0a674f537fe41ff
+    spec:
+      serviceAccountName: prometheus-adapter
+      containers:
+      - name: prometheus-adapter
+        image: "directxman12/k8s-prometheus-adapter-amd64:v0.7.0"
+        imagePullPolicy: IfNotPresent
+        args:
+        - /adapter
+        - --secure-port=6443
+        - --cert-dir=/tmp/cert
+        - --logtostderr=true
+        - --prometheus-url=http://lma-prometheus:9090
+        - --metrics-relist-interval=1m
+        - --v=4
+        - --config=/etc/adapter/config.yaml
+        ports:
+        - containerPort: 6443
+          name: https
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: https
+            scheme: HTTPS
+          initialDelaySeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: https
+            scheme: HTTPS
+          initialDelaySeconds: 30
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["all"]
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+        volumeMounts:
+        - mountPath: /etc/adapter/
+          name: config
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+      nodeSelector:
+        taco-lma: enabled
+      affinity:
+        {}
+      priorityClassName: 
+      tolerations:
+        []
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-adapter
+      - name: tmp
+        emptyDir: {}
+

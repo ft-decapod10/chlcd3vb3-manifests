@@ -1,0 +1,19 @@
+# Source: fluentbit-resource/templates/fluentbit/inputs.yaml
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterInput
+metadata:
+  name: input-kube
+  namespace: lma
+  labels:
+    fluentbit.fluent.io/enabled: "true"
+    app.kubernetes.io/version: v0.0.1
+spec:
+  tail: 
+    db: /fluent-bit/tail
+    bufferChunkSize: 2M
+    bufferMaxSize: 5M
+    memBufLimit: 20MB
+    parser: docker
+    path: /var/log/containers/*.log
+    tag: "kube.*"
+    multilineParser: docker, cri

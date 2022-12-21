@@ -1,0 +1,119 @@
+# Source: prometheus-process-exporter/templates/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: process-exporter
+  annotations:
+    "openstackhelm.openstack.org/release_uuid": ""
+  labels:
+    release_group: prometheus-process-exporter
+    application: process_exporter
+    component: metrics
+spec:
+  selector:
+    matchLabels:
+      release_group: prometheus-process-exporter
+      application: process_exporter
+      component: metrics
+  
+  minReadySeconds: 0
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 30%
+  template:
+    metadata:
+      labels:
+        release_group: prometheus-process-exporter
+        application: process_exporter
+        component: metrics
+      annotations:
+        
+        "openstackhelm.openstack.org/release_uuid": ""
+    spec:
+      securityContext:
+        runAsUser: 65534
+      serviceAccountName: prometheus-process-exporter-process-exporter
+
+      
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+      - key: node-role.kubernetes.io/node
+        operator: Exists
+
+      hostNetwork: false
+      hostPID: true
+      initContainers:
+        
+        - name: init
+          image: "quay.io/airshipit/kubernetes-entrypoint:v1.0.0"
+          imagePullPolicy: Always  
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 65534
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: INTERFACE_NAME
+              value: eth0
+            - name: PATH
+              value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/
+            - name: DEPENDENCY_SERVICE
+              value: ""
+            - name: DEPENDENCY_DAEMONSET
+              value: ""
+            - name: DEPENDENCY_CONTAINER
+              value: ""
+            - name: DEPENDENCY_POD_JSON
+              value: ""
+            - name: DEPENDENCY_CUSTOM_RESOURCE
+              value: ""
+          command:
+            - kubernetes-entrypoint
+          volumeMounts:
+            []
+      containers:
+        - name: process-exporter
+          image: "docker.io/ncabatoff/process-exporter:0.2.11"
+          imagePullPolicy: Always
+          
+          
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          args:
+            - -children=true
+            - -procnames
+            - dockerd,kubelet,kube-proxy,ntpd,node
+          ports:
+            - name: metrics
+              containerPort: 9256
+              hostPort: 9256
+          readinessProbe:
+            tcpSocket:
+              port: 9256
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          volumeMounts:
+            - name: pod-tmp
+              mountPath: /tmp
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+      volumes:
+        - name: pod-tmp
+          emptyDir: {}
+        - name: proc
+          hostPath:
+            path: /proc
+

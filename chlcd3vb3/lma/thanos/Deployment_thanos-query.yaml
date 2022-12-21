@@ -1,0 +1,88 @@
+# Source: thanos/templates/query/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-query
+  labels:
+    app.kubernetes.io/name: thanos
+    helm.sh/chart: thanos-3.4.0
+    app.kubernetes.io/instance: thanos
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: query
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos
+      app.kubernetes.io/instance: thanos
+      app.kubernetes.io/component: query
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos
+        helm.sh/chart: thanos-3.4.0
+        app.kubernetes.io/instance: thanos
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: query
+    spec:
+      
+      serviceAccount: thanos-query
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: thanos
+                    app.kubernetes.io/instance: thanos
+                    app.kubernetes.io/component: query
+                namespaces:
+                  - "lma"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      nodeSelector:
+        taco-lma: enabled
+      securityContext:
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+        - name: query
+          image: docker.io/bitnami/thanos:0.17.2-scratch-r1
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - query
+            - --log.level=info
+            - --grpc-address=0.0.0.0:10901
+            - --http-address=0.0.0.0:10902
+            - --query.replica-label=replica
+            - --store=prometheus-operated.lma.svc.cluster.local:10901
+          ports:
+            - name: http
+              containerPort: 10902
+              protocol: TCP
+            - name: grpc
+              containerPort: 10901
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+      volumes:

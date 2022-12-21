@@ -1,0 +1,37 @@
+# Source: lma-addons/templates/prometheus-rule/kubelet.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    prometheus-operator-validated: "true"
+  generation: 1
+  name: kubelet
+  namespace:  
+spec:
+#kubelet:
+  groups:
+  - name: kubelet.rules
+    rules:
+    - alert: K8SNodeNotReady
+      expr: sum without(status) (kube_node_status_condition{condition="Ready", status=~"unknown|false"}) > 0
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        message: The Kubelet on {{ $labels.node }} has not checked in with the API, or has set itself to NotReady, for more than an hour
+        summary: Node status is NotReady
+    - alert: K8SKubeletDown
+      expr: sum(up{job="kubelet"}) / count(up{job="kubelet"}) < 1.0
+      for: 1m
+      labels:
+        severity: page
+      annotations:
+        message: Prometheus failed to scrape {{ $value }}% of kubelets, or all Kubelets have disappeared from service discovery.
+        summary: Many Kubelets cannot be scraped
+    - alert: K8SKubeletTooManyPods
+      expr: kubelet_running_pod_count > 100
+      labels:
+        severity: warning
+      annotations:
+        message: Kubelet {{ $labels.instance }} is running {{ $value }} pods, close to the limit of 110
+        summary: Kubelet is close to pod limit

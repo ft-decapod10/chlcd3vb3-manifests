@@ -1,0 +1,54 @@
+# Source: cluster-api-aws/templates/job-pre-delete.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: chlcd3vb3-capi-aws-pre-delete
+  namespace: chlcd3vb3
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "5"
+spec:
+  template:
+    metadata:
+      name: chlcd3vb3-capi-aws
+    spec:
+      serviceAccountName: chlcd3vb3-capi-aws
+      containers:
+      - name: delete-mp
+        image: "ghcr.io/openinfradev/python_kubectl_argo:v1.1.0"
+        imagePullPolicy: IfNotPresent
+        command:
+        - timeout
+        - 20m
+        - /delete_from_yaml_raw.py
+        - mp.raw.yaml
+        volumeMounts:
+        - name: vol
+          subPath: mp.raw.yaml
+          mountPath: /mp.raw.yaml
+        - name: vol
+          subPath: delete_from_yaml_raw.py
+          mountPath: /delete_from_yaml_raw.py
+      - name: delete-md
+        image: "ghcr.io/openinfradev/python_kubectl_argo:v1.1.0"
+        imagePullPolicy: IfNotPresent
+        command:
+        - timeout
+        - 20m
+        - /delete_from_yaml_raw.py
+        - md.raw.yaml
+        volumeMounts:
+        - name: vol
+          subPath: md.raw.yaml
+          mountPath: /md.raw.yaml
+        - name: vol
+          subPath: delete_from_yaml_raw.py
+          mountPath: /delete_from_yaml_raw.py
+
+      volumes:
+      - name: vol
+        configMap:
+          name: chlcd3vb3-capi-aws
+          defaultMode: 0555
+      restartPolicy: OnFailure
+

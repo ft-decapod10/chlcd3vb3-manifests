@@ -1,0 +1,90 @@
+# Source: cluster-api-aws/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chlcd3vb3-capi-aws
+  namespace: chlcd3vb3
+rules:
+- apiGroups:
+  - 'infrastructure.cluster.x-k8s.io'
+  resources:
+  - awsclusters
+  verbs: 
+  - get
+  - list
+  - watch
+- apiGroups:
+  - 'exp.cluster.x-k8s.io'
+  - 'cluster.x-k8s.io'
+  resources:
+  - machinepools
+  verbs:
+  - get
+  - list
+  - create
+  - patch
+  - delete
+- apiGroups:
+  - 'infrastructure.cluster.x-k8s.io'
+  resources:
+  - awsmachinepools
+  verbs:
+  - get
+  - list
+  - create
+  - patch
+  - delete
+- apiGroups:
+  - 'bootstrap.cluster.x-k8s.io'
+  resources:
+  - kubeadmconfigs
+  verbs:
+  - get
+  - list
+  - create
+  - patch
+  - delete
+- apiGroups:
+  - 'cluster.x-k8s.io'
+  resources:
+  - machinedeployments
+  verbs:
+  - get
+  - list
+  - create
+  - patch
+- apiGroups:
+  - 'infrastructure.cluster.x-k8s.io'
+  resources:
+  - awsmachinetemplates
+  verbs:
+  - get
+  - list
+  - create
+  - patch
+- apiGroups:
+  - 'bootstrap.cluster.x-k8s.io'
+  resources:
+  - kubeadmconfigtemplates
+  verbs:
+  - get
+  - list
+  - create
+  - patch
+
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  verbs: 
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - serviceaccount
+  verbs: 
+  - get
+  - list
+  - watch

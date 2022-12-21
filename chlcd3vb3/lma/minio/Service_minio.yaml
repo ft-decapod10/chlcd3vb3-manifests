@@ -1,0 +1,23 @@
+# Source: minio/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: lma
+  labels:
+    app.kubernetes.io/name: minio
+    helm.sh/chart: minio-6.8.3
+    app.kubernetes.io/instance: minio
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: NodePort
+  externalTrafficPolicy: "Cluster"
+  
+  ports:
+    - name: minio
+      port: 9000
+      targetPort: minio
+      nodePort: 30002
+  selector:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/instance: minio

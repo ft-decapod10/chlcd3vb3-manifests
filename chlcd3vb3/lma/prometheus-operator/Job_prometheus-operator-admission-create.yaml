@@ -1,0 +1,49 @@
+# Source: kube-prometheus-stack/templates/prometheus-operator/admission-webhooks/job-patch/job-createSecret.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name:  prometheus-operator-admission-create
+  namespace: lma
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    app: kube-prometheus-stack-admission-create    
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: prometheus-operator
+    app.kubernetes.io/version: "21.0.3"
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    chart: kube-prometheus-stack-21.0.3
+    release: "prometheus-operator"
+    heritage: "Helm"
+spec:
+  template:
+    metadata:
+      name:  prometheus-operator-admission-create
+      labels:
+        app: kube-prometheus-stack-admission-create        
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/instance: prometheus-operator
+        app.kubernetes.io/version: "21.0.3"
+        app.kubernetes.io/part-of: kube-prometheus-stack
+        chart: kube-prometheus-stack-21.0.3
+        release: "prometheus-operator"
+        heritage: "Helm"
+    spec:
+      containers:
+        - name: create
+          image: k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - create
+            - --host=prometheus-operator-operator,prometheus-operator-operator.lma.svc
+            - --namespace=lma
+            - --secret-name=prometheus-operator-admission
+          resources:
+            {}
+      restartPolicy: OnFailure
+      serviceAccountName: prometheus-operator-admission
+      securityContext:
+        runAsGroup: 2000
+        runAsNonRoot: true
+        runAsUser: 2000

@@ -1,0 +1,19 @@
+# Source: lma-addons/templates/service-monitor/argo-cd.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: argocd-server
+  namespace: lma
+  labels:
+    release: prometheus-operator
+spec:
+  jobLabel: argocd-server
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-metrics
+  endpoints:
+  - port: metrics
+    interval: 10s
+    path: "/metrics"

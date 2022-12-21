@@ -1,0 +1,22 @@
+# Source: lma-addons/templates/prometheus-rule/kube-controller-manager.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    prometheus-operator-validated: "true"
+  name: kube-controller-manager
+  namespace:  
+spec:
+#kube_controller_manager:
+  groups:
+  - name: kube-controller-manager.rules
+    rules:
+    - alert: K8SControllerManagerDown
+      expr: count(kube_pod_container_status_ready{container="kube-controller-manager"})  - count(kube_pod_container_status_ready{container="kube-controller-manager"}==0) == 0
+      for: 5m
+      labels:
+        severity: page
+      annotations:
+        message: There is no running K8S controller manager. Deployments and replication controllers are not making progress.
+        runbook: https://coreos.com/tectonic/docs/latest/troubleshooting/controller-recovery.html#recovering-a-controller-manager
+        summary: Controller manager is down

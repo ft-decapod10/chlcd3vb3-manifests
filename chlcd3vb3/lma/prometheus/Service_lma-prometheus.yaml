@@ -1,0 +1,27 @@
+# Source: kube-prometheus-stack/templates/prometheus/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: lma-prometheus
+  namespace: lma
+  labels:
+    app: kube-prometheus-stack-prometheus
+    self-monitor: "true"
+    
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: prometheus
+    app.kubernetes.io/version: "21.0.3"
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    chart: kube-prometheus-stack-21.0.3
+    release: "prometheus"
+    heritage: "Helm"
+spec:
+  ports:
+  - name: web
+    nodePort: 30008
+    port: 9090
+    targetPort: 9090
+  selector:
+    app.kubernetes.io/name: prometheus
+    prometheus: lma-prometheus
+  type: "NodePort"

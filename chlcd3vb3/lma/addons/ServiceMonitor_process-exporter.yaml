@@ -1,0 +1,16 @@
+# Source: lma-addons/templates/service-monitor/process-exporter.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: process-exporter
+  labels:
+    app: process-exporter
+spec:
+  jobLabel: process-exporter
+  selector:
+    matchLabels:
+      application: process_exporter
+      component: metrics
+  endpoints:
+  - port: metrics
+    interval: 10s

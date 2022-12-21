@@ -1,0 +1,23 @@
+# Source: thanos/templates/compactor/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-compactor
+  labels:
+    app.kubernetes.io/name: thanos
+    helm.sh/chart: thanos-3.4.0
+    app.kubernetes.io/instance: thanos
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: compactor
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9090
+      targetPort: http
+      protocol: TCP
+      name: http
+      nodePort: null
+  selector:
+    app.kubernetes.io/name: thanos
+    app.kubernetes.io/instance: thanos
+    app.kubernetes.io/component: compactor

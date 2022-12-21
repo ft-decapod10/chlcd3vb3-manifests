@@ -1,0 +1,16 @@
+# Source: fluentbit-resource/templates/fluentbit/filters.yaml
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterFilter
+metadata:
+  name: add-info
+  namespace: lma
+  labels:
+    fluentbit.fluent.io/enabled: "true"
+    app.kubernetes.io/version: v0.0.1
+spec:
+  match: "kube*"
+  filters:
+  - modify:
+      rules:
+      - add:
+          cluster: cluster.local

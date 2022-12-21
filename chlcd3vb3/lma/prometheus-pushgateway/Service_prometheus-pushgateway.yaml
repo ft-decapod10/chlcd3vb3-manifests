@@ -1,0 +1,23 @@
+# Source: prometheus-pushgateway/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-pushgateway
+  annotations:
+    {}
+  labels:
+    app: prometheus-pushgateway
+    chart: prometheus-pushgateway-1.5.1
+    heritage: Helm
+    release: prometheus-pushgateway
+spec:
+  type: NodePort
+  ports:
+    - port: 9091
+      targetPort: 9091
+      nodePort: 30010
+      protocol: TCP
+      name: http
+  selector:
+    app: prometheus-pushgateway
+    release: prometheus-pushgateway

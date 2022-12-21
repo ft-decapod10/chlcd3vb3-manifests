@@ -1,0 +1,38 @@
+# Source: fluentbit-resource/templates/fluentbit/filters.yaml
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterFilter
+metadata:
+  name: kubernetes
+  namespace: lma
+  labels:
+    fluentbit.fluent.io/enabled: "true"
+    app.kubernetes.io/version: v0.0.1
+spec:
+  match: "kube.*"
+  filters:
+  - kubernetes:
+      kubeURL: https://kubernetes.default.svc:443
+      mergeLog: true
+      labels: false
+      annotations: false
+  - nest:
+      operation: lift
+      nestedUnder: kubernetes
+      addPrefix: kubernetes_
+  - modify:
+      rules:
+      - remove: stream
+      - remove: kubernetes_pod_id
+      - remove: kubernetes_docker_id
+      - remove: kubernetes_container_hash
+  - nest:
+      operation: nest
+      wildcard:
+      - kubernetes_*
+      nestUnder: kubernetes
+      removePrefix: kubernetes_
+  - rewriteTag:
+      rules:
+      - $kubernetes['container_name'] ^(kibana|elasticsearch|fluent-bit)$ intended_drop.$TAG false
+      - $kubernetes['namespace_name'] ^(kube-system|taco-system|lma|argo)$ seperate-kube-0.$TAG false
+      emitterName: alertrule_match

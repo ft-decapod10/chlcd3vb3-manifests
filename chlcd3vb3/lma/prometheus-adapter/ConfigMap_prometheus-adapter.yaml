@@ -1,0 +1,12 @@
+# Source: prometheus-adapter/templates/custom-metrics-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-adapter
+  labels:
+    app: prometheus-adapter
+    chart: prometheus-adapter-2.5.1
+    release: prometheus-adapter
+    heritage: Helm
+data:
+  config.yaml: |

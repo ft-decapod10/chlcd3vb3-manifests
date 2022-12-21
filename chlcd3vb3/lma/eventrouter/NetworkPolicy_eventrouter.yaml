@@ -1,0 +1,23 @@
+---
+# Source: eventrouter/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:     
+    app: eventrouter
+    heritage: Helm
+    release: eventrouter
+    chart: eventrouter-0.4.0
+  name: eventrouter
+  namespace: lma
+spec:
+  podSelector:
+    matchLabels:
+      app: eventrouter
+      release: eventrouter
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+      - port: 8080
+        protocol: TCP

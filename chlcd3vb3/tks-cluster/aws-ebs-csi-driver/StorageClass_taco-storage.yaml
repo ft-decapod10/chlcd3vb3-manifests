@@ -1,0 +1,14 @@
+# Source: aws-ebs-csi-driver/templates/storageclass.yaml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: taco-storage
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+  labels:
+    support: taco-apps
+provisioner: ebs.csi.aws.com
+parameters:
+  encrypted: "true"
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
